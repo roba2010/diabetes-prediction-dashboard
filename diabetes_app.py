@@ -186,4 +186,49 @@ elif option == "ML":
         if result == 1:
             st.error("⚠ The model predicts that the patient is **LIKELY to have diabetes**.")
         else:
+
             st.success(" The model predicts that the patient is **NOT likely to have diabetes**.")
+            # -----------------------------------------
+# قسم جديد لعرض الرسوم البيانية بالـ Plotly
+# -----------------------------------------
+
+st.markdown("---")
+st.header("📈 Data Visualization")
+
+st.write("استخدمي هذه الرسوم لاستكشاف بيانات السكري بصريًا.")
+
+# 1) توزيع أي عمود (Histogram)
+st.subheader("Histogram – توزيع أحد المتغيرات")
+numeric_cols = df.select_dtypes(include=["int64", "float64"]).columns
+
+selected_col = st.selectbox(
+    "اختر العمود الذي تريدين مشاهدة توزيعه:",
+    numeric_cols
+)
+
+fig_hist = px.histogram(
+    df,
+    x=selected_col,
+    nbins=30,
+    title=f"Distribution of {selected_col}",
+    marginal="box"
+)
+st.plotly_chart(fig_hist, use_container_width=True)
+
+# 2) العلاقة بين متغيرين (Scatter plot)
+st.subheader("Scatter plot – العلاقة بين متغيرين")
+
+x_var = st.selectbox("المتغير على المحور السيني (X):", numeric_cols, key="x_var")
+y_var = st.selectbox("المتغير على المحور الصادي (Y):", numeric_cols, key="y_var")
+
+color_col = "Outcome" if "Outcome" in df.columns else None
+
+fig_scatter = px.scatter(
+    df,
+    x=x_var,
+    y=y_var,
+    color=color_col,
+    title=f"Relationship between {x_var} and {y_var}",
+    trendline="ols"
+)
+st.plotly_chart(fig_scatter, use_container_width=True)
