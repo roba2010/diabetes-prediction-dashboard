@@ -1,234 +1,135 @@
-
-# Diabetes Prediction App (Enhanced)
-
+# -------------------- IMPORTS --------------------
 import streamlit as st
-import numpy as np
 import pandas as pd
+import numpy as np
 import plotly.express as px
+import seaborn as sns
+import matplotlib.pyplot as plt
 import pickle
-from sklearn.metrics import accuracy_score, confusion_matrix
 
-# ---------- إعداد صفحة ستريملِت ----------
-st.set_page_config(page_title="Diabetes Prediction App", layout="wide")
+# Page Config
+st.set_page_config(
+    page_title="Diabetes Prediction Dashboard",
+    layout="wide",
+    page_icon="🩺"
+)
 
-# ---------- تحميل البيانات ----------
+# Load Data
 df = pd.read_csv("diabetes.csv")
 
-# ---------- تحميل النموذج المحفوظ ----------
-with open("diabetes_model.pkl", "rb") as f:
-    data = pickle.load(f)
-    model = data["model"]
-    scaler = data["scaler"]
-    feature_cols = data["columns"]
+# Load Model
+model_data = pickle.load(open("diabetes_model.pkl", "rb"))
+model = model_data["model"]
+scaler = model_data["scaler"]
 
-# ---------- الشريط الجانبي ----------
-option = st.sidebar.selectbox("Pick a choice:", ["Home", "EDA", "ML"])
+# Sidebar
+page = st.sidebar.selectbox("📌 اختر صفحة", ["🏠 Home", "📊 EDA", "🤖 ML Prediction"])
 
-#                               HOME
-if option == "Home":
-    st.title(" Diabetes Prediction App")
-    st.markdown("###  Author: **Roba Mohamad**")  # هنا كتبت اسمي  
-    st.write(
-        """
-        This dashboard analyzes **diabetes data** from Kaggle and uses a 
-        **Machine Learning model** to predict whether a patient is likely to have diabetes.
-        """
-    )
 
-    st.markdown("####  Sample of the dataset:")
+# ============================================================
+# 🏠 HOME PAGE
+# ============================================================
+if page == "🏠 Home":
+    st.title("🩺 Diabetes Prediction Dashboard")
+    st.markdown("### **Author: Roba Mohamad**")
+    st.write("هذا المشروع يقوم بتحليل بيانات مرضى السكري وبناء نموذج للتنبؤ بإصابة المريض بالسكري.")
+
+    st.subheader("📌 نظرة عامة على البيانات")
+
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.metric("عدد المرضى في البيانات", df.shape[0])
+    with col2:
+        st.metric("عدد الخصائص (Features)", df.shape[1] - 1)
+    with col3:
+        st.metric("عدد المصابين بالسكري", df["Outcome"].sum())
+
+    col4, col5 = st.columns(2)
+    with col4:
+        st.metric("عدد غير المصابين", (df["Outcome"] == 0).sum())
+    with col5:
+        st.metric("نسبة الإصابة بالسكري", f"{df['Outcome'].mean()*100:.2f}%")
+
+    st.write("### عرض أول 5 صفوف من البيانات:")
     st.dataframe(df.head())
 
-    st.markdown(
-        """
-        **Columns:**
-        - `Pregnancies`: عدد مرات الحمل  
-        - `Glucose`: مستوى السكر في الدم  
-        - `BloodPressure`: ضغط الدم الانبساطي  
-        - `SkinThickness`: سماكة ثنايا الجلد  
-        - `Insulin`: مستوى الإنسولين  
-        - `BMI`: مؤشر كتلة الجسم  
-        - `DiabetesPedigreeFunction`: مؤشر يعتمد على التاريخ العائلي  
-        - `Age`: عمر المريض  
-        - `Outcome`: 0 = لا يعاني من السكري، 1 = يعاني من السكري
-        """
-    )
 
-#                               EDA
-elif option == "EDA":
-    st.title(" Exploratory Data Analysis (EDA)")
+# ============================================================
+# 📊 EDA PAGE
+# ============================================================
+elif page == "📊 EDA":
+    st.title("📊 Exploratory Data Analysis (EDA)")
 
-    # -------- إحصائيات وصفية عامة --------
-    st.markdown("### Basic statistics for the dataset:")
-    st.write(df.describe().round(2))
+    st.subheader("1️⃣ توزيع العمر")
+    fig = px.histogram(df, x="Age", nbins=30, color="Outcome",
+                       title="Age Distribution")
+    st.plotly_chart(fig, use_container_width=True)
 
-    # -------- فلتر بالعمر --------
-    st.markdown("### Filter data by Age")
+    st.subheader("2️⃣ توزيع مستوى الغلوكوز")
+    fig = px.histogram(df, x="Glucose", nbins=30, color="Outcome",
+                       title="Glucose Distribution")
+    st.plotly_chart(fig, use_container_width=True)
 
-    min_age = int(df["Age"].min())
-    max_age = int(df["Age"].max())
+    st.subheader("3️⃣ Boxplot لـ BMI حسب الإصابة")
+    fig = px.box(df, x="Outcome", y="BMI", color="Outcome",
+                 title="BMI by Outcome")
+    st.plotly_chart(fig, use_container_width=True)
 
-    age_range = st.slider(
-        "Select age range:",
-        min_value=min_age,
-        max_value=max_age,
-        value=(min_age, max_age)
-    )
+    st.subheader("4️⃣ عدد الحالات المصابة وغير المصابة")
+    fig = px.bar(df["Outcome"].value_counts(), title="Outcome Count")
+    st.plotly_chart(fig, use_container_width=True)
 
-    # فلترة البيانات حسب مدى العمر المختار
-    filtered_df = df[(df["Age"] >= age_range[0]) & (df["Age"] <= age_range[1])]
+    st.subheader("5️⃣ العلاقة بين متغيرين (Scatter)")
+    x_var = st.selectbox("اختر المتغير الأول:", df.columns[:-1])
+    y_var = st.selectbox("اختر المتغير الثاني:", df.columns[:-1])
 
-    st.write(f"Number of records in selected age range: **{len(filtered_df)}**")
+    fig = px.scatter(df, x=x_var, y=y_var, color="Outcome",
+                     title=f"{x_var} vs {y_var}")
+    st.plotly_chart(fig, use_container_width=True)
 
-    col1, col2 = st.columns(2)
+    st.subheader("6️⃣ Pairplot لعينة من البيانات")
+    st.write("هذا الرسم يعطي فكرة عن العلاقات بين عدة متغيرات.")
+    sample_df = df.sample(200)
+    fig, ax = plt.subplots(figsize=(10, 6))
+    sns.pairplot(sample_df.iloc[:, :5])
+    st.pyplot(fig)
 
-    # -------- توزيع Outcome --------
-    with col1:
-        st.subheader("Outcome distribution (0 = No Diabetes, 1 = Diabetes)")
-        outcome_counts = filtered_df["Outcome"].value_counts().reset_index()
-        outcome_counts.columns = ["Outcome", "Count"]
-        fig = px.bar(
-            outcome_counts,
-            x="Outcome",
-            y="Count",
-            text="Count",
-            title="Outcome distribution"
-        )
-        st.plotly_chart(fig, use_container_width=True)
 
-    # -------- توزيع الأعمار --------
-    with col2:
-        st.subheader("Age distribution")
-        fig2 = px.histogram(
-            filtered_df,
-            x="Age",
-            nbins=30,
-            title="Age Histogram"
-        )
-        st.plotly_chart(fig2, use_container_width=True)
-
-    # -------- علاقة Glucose vs BMI --------
-    st.subheader("Glucose vs BMI (colored by Outcome)")
-    fig3 = px.scatter(
-        filtered_df,
-        x="Glucose",
-        y="BMI",
-        color="Outcome",
-        title="Glucose vs BMI by Outcome",
-        opacity=0.7
-    )
-    st.plotly_chart(fig3, use_container_width=True)
-
-    # -------- Correlation Heatmap --------
-    st.subheader("Correlation Heatmap")
-    corr = filtered_df.corr(numeric_only=True)
-    fig_corr = px.imshow(
-        corr,
-        text_auto=True,
-        aspect="auto",
-        title="Correlation between numerical features"
-    )
-    st.plotly_chart(fig_corr, use_container_width=True)
-
-#                               ML
-elif option == "ML":
+# ============================================================
+# 🤖 ML Prediction
+# ============================================================
+elif page == "🤖 ML Prediction":
     st.title("🤖 Diabetes Prediction Model")
 
-    # -------- تقييم النموذج على كامل البيانات (للعرض بس) --------
-    X_all = df.drop("Outcome", axis=1)
-    y_all = df["Outcome"]
-    X_all_scaled = scaler.transform(X_all)
-    y_pred_all = model.predict(X_all_scaled)
+    st.write("أدخل بيانات المريض ثم اضغط **Predict**")
 
-    acc_all = accuracy_score(y_all, y_pred_all)
-    cm = confusion_matrix(y_all, y_pred_all)
-
-    st.markdown(f"**Model accuracy on full dataset:** `{acc_all:.2%}`")
-
-    st.markdown("**Confusion Matrix:**")
-    st.write(pd.DataFrame(cm,
-                          index=["True 0 (No Diabetes)", "True 1 (Diabetes)"],
-                          columns=["Pred 0", "Pred 1"]))
-
-    st.markdown("---")
-    st.write("Enter the patient data below and click **Predict**:")
-
-    # -------- إدخالات المستخدم --------
-    col1, col2 = st.columns(2)
+    col1, col2, col3 = st.columns(3)
 
     with col1:
-        pregnancies = st.number_input("Pregnancies", min_value=0, max_value=20, value=1)
-        glucose = st.number_input("Glucose", min_value=0, max_value=300, value=120)
-        blood_pressure = st.number_input("BloodPressure", min_value=0, max_value=200, value=70)
-        skin_thickness = st.number_input("SkinThickness", min_value=0, max_value=100, value=20)
+        Pregnancies = st.number_input("Pregnancies", 0, 20, 1)
+        Glucose = st.number_input("Glucose", 0, 300, 120)
+        BloodPressure = st.number_input("BloodPressure", 0, 200, 70)
 
     with col2:
-        insulin = st.number_input("Insulin", min_value=0, max_value=900, value=80)
-        bmi = st.number_input("BMI", min_value=0.0, max_value=70.0, value=25.0)
-        dpf = st.number_input("DiabetesPedigreeFunction", min_value=0.0, max_value=3.0, value=0.5)
-        age = st.number_input("Age", min_value=1, max_value=120, value=30)
+        SkinThickness = st.number_input("SkinThickness", 0, 100, 20)
+        Insulin = st.number_input("Insulin", 0, 900, 80)
+        BMI = st.number_input("BMI", 0.0, 70.0, 25.0)
 
-    btn = st.button("Predict")
+    with col3:
+        DPF = st.number_input("DiabetesPedigreeFunction", 0.0, 3.0, 0.5)
+        Age = st.number_input("Age", 18, 90, 30)
 
-    if btn:
-        # ترتيب المدخلات مثل ترتيب الأعمدة
-        input_data = np.array([[pregnancies, glucose, blood_pressure, skin_thickness,
-                                insulin, bmi, dpf, age]])
+    if st.button("🔮 Predict"):
+        user_input = [[Pregnancies, Glucose, BloodPressure, SkinThickness,
+                       Insulin, BMI, DPF, Age]]
 
-        # نفس الـ scaler المستخدم في التدريب
-        input_scaled = scaler.transform(input_data)
+        scaled_input = scaler.transform(user_input)
+        prediction = model.predict(scaled_input)
+        prob = model.predict_proba(scaled_input)[0][1]
 
-        # احتمال الإصابة (الفئة 1)
-        proba = model.predict_proba(input_scaled)[0][1]
-        result = model.predict(input_scaled)[0]
+        st.write(f"### 🔢 احتمال الإصابة: **{prob*100:.2f}%**")
 
-        st.markdown(f"**Predicted probability of diabetes:** `{proba*100:.1f}%`")
-
-        if result == 1:
-            st.error("⚠ The model predicts that the patient is **LIKELY to have diabetes**.")
+        if prediction == 1:
+            st.error("🛑 النموذج يتوقع أن المريض **مصاب بالسكري**.")
         else:
-
-            st.success(" The model predicts that the patient is **NOT likely to have diabetes**.")
-            # -----------------------------------------
-# قسم جديد لعرض الرسوم البيانية بالـ Plotly
-# -----------------------------------------
-
-st.markdown("---")
-st.header("📈 Data Visualization")
-
-st.write("استخدمي هذه الرسوم لاستكشاف بيانات السكري بصريًا.")
-
-# 1) توزيع أي عمود (Histogram)
-st.subheader("Histogram – توزيع أحد المتغيرات")
-numeric_cols = df.select_dtypes(include=["int64", "float64"]).columns
-
-selected_col = st.selectbox(
-    "اختر العمود الذي تريدين مشاهدة توزيعه:",
-    numeric_cols
-)
-
-fig_hist = px.histogram(
-    df,
-    x=selected_col,
-    nbins=30,
-    title=f"Distribution of {selected_col}",
-    marginal="box"
-)
-st.plotly_chart(fig_hist, use_container_width=True)
-
-# 2) العلاقة بين متغيرين (Scatter plot)
-st.subheader("Scatter plot – العلاقة بين متغيرين")
-
-x_var = st.selectbox("المتغير على المحور السيني (X):", numeric_cols, key="x_var")
-y_var = st.selectbox("المتغير على المحور الصادي (Y):", numeric_cols, key="y_var")
-
-color_col = "Outcome" if "Outcome" in df.columns else None
-
-fig_scatter = px.scatter(
-    df,
-    x=x_var,
-    y=y_var,
-    color=color_col,
-    title=f"Relationship between {x_var} and {y_var}",
-    trendline="ols"
-)
-st.plotly_chart(fig_scatter, use_container_width=True)
+            st.success("✅ النموذج يتوقع أن المريض **غير مصاب بالسكري**.")
