@@ -1,78 +1,27 @@
-🩺 Diabetes Prediction App
+# 🩺 Diabetes Prediction App (Machine Learning Dashboard)
 
-A Streamlit web application that analyzes diabetes data and uses a Machine Learning model to predict whether a patient is likely to have diabetes.
-
-
----
-
-🚀 Live Demo
-
-🔗 Try the App Here:
-https://app1-qfzl45xjkeezkvxkhzmnsk.streamlit.app/
-
+An end-to-end **Machine Learning web application** built with **Streamlit** that analyzes diabetes data and predicts whether a patient is likely to have diabetes based on medical inputs.
 
 ---
 
-📊 Features
+## 🚀 Live Demo
+🔗 https://diabetes-prediction-dashboard-roba.streamlit.app/
+---
 
-📁 Dataset preview
-
-📈 Exploratory Data Analysis (EDA)
-
-🔥 Interactive visualizations (Scatter plots, Histograms, Heatmap)
-
-🤖 Machine Learning prediction model
-
-🧮 User input form for real-time prediction
-
-
+## 📊 Features
+- 📁 Dataset preview
+- 📈 Exploratory Data Analysis (EDA)
+- 🔥 Interactive visualizations (Scatter plots, Histograms, Heatmap)
+- 🤖 Machine Learning prediction model
+- 🧮 User input form for real-time prediction
 
 ---
 
-📂 Project Files
-
-diabetes_app.py → Main Streamlit application
-
-train_diabetes.py → Training script
-
-diabetes.csv → Dataset
-
-diabetes_model.pkl → Trained ML model
-
-requirements.txt → Dependencies
-
-
-
+## 📂 Project Structure
+diabetes-prediction-dashboard/ ├── diabetes_app.py        # Main Streamlit application ├── train_diabetes.py     # Script for training the ML model ├── diabetes.csv           # Dataset used for training ├── diabetes_model.pkl     # Trained machine learning model ├── requirements.txt       # Project dependencies ├── README.md              # Project documentation └── LICENSE                # MIT License
 ---
 
-👩‍💻 Author
+## 📄 License
+This project is licensed under the MIT License.
 
-Roba Mohamad
-
-
----
-
-📫 Contact
-
-If you want a similar dashboard or a customized ML model, feel free to reach out!
-📧 masaali2010@gmail.com
-
----
-
-🛠️ Technologies
-
-Python
-
-Streamlit
-
-Pandas
-
-Plotly
-
-Scikit-learn
-
-
-
----
-
-🎉 Thank you for visiting!
+© 2025 Roba Mohamad. All rights reserved.
